@@ -19,6 +19,7 @@ class Config:
     CANTIDAD_RESULTADOS = int(os.getenv("CANTIDAD_RESULTADOS", "5"))
     TIMEOUT_CORTO = int(os.getenv("TIMEOUT_CORTO", "10"))
     TIMEOUT_LARGO = int(os.getenv("TIMEOUT_LARGO", "30"))
+    PAUSA_ENTRE_TERMINOS = int(os.getenv("PAUSA_ENTRE_TERMINOS", "4"))
 
     @staticmethod
     def raiz_proyecto():

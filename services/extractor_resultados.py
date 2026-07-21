@@ -1,5 +1,5 @@
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, WebDriverException
 
 from utils.config import Config
 from utils.logger import Logger
@@ -7,7 +7,12 @@ from utils.impresor import Impresor
 
 
 def extraer_cinco_resultados(driver):
-    tarjetas = driver.find_elements(By.CLASS_NAME, "poly-card")[:Config.CANTIDAD_RESULTADOS]
+    try:
+        tarjetas = driver.find_elements(By.CLASS_NAME, "poly-card")[:Config.CANTIDAD_RESULTADOS]
+    except WebDriverException as error:
+        Logger.error(f"No se pudieron leer las tarjetas de resultados: {error}")
+        Impresor.aviso("No se pudieron leer los resultados de esta búsqueda")
+        return []
 
     resultados = []
     for tarjeta in tarjetas:

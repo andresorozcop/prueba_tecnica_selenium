@@ -1,4 +1,5 @@
 import json
+import time
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -6,12 +7,16 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
 
 from services.extractor_resultados import extraer_cinco_resultados
 from services.exportador_excel import exportar_resultados
 from utils.config import Config
 from utils.impresor import Impresor
+from utils.logger import Logger
+
+INTENTOS_POR_TERMINO = 2
 
 
 def obtener_todos_los_terminos():
@@ -52,6 +57,20 @@ def buscar_en_mercadolibre(driver, termino):
     )
 
 
+def buscar_termino_con_reintento(driver, termino):
+    for intento in range(1, INTENTOS_POR_TERMINO + 1):
+        try:
+            buscar_en_mercadolibre(driver, termino)
+            return extraer_cinco_resultados(driver)
+        except (TimeoutException, WebDriverException) as error:
+            if intento < INTENTOS_POR_TERMINO:
+                Logger.advertencia(f"Intento {intento} falló para '{termino}', se reintenta: {error}")
+                continue
+            Logger.error(f"Búsqueda fallida para '{termino}' tras {INTENTOS_POR_TERMINO} intentos: {error}")
+            Impresor.aviso(f'Búsqueda fallida para "{termino}", se continúa con el siguiente término')
+            return None
+
+
 def procesar_todas_las_busquedas():
     terminos = obtener_todos_los_terminos()
 
@@ -63,12 +82,15 @@ def procesar_todas_las_busquedas():
         termino = termino.strip()
         Impresor.progreso(indice, total_terminos, f'buscando "{termino}"')
 
-        buscar_en_mercadolibre(driver, termino)
+        resultados = buscar_termino_con_reintento(driver, termino)
+        if resultados is None:
+            continue
 
-        resultados = extraer_cinco_resultados(driver)
         for resultado in resultados:
             resultado["termino_busqueda"] = termino
         resultados_totales.extend(resultados)
+
+        time.sleep(Config.PAUSA_ENTRE_TERMINOS)
 
     exportar_resultados(resultados_totales)
 

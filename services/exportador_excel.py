@@ -4,6 +4,7 @@ import pandas as pd
 
 from utils.config import Config
 from utils.impresor import Impresor
+from utils.logger import Logger
 
 COLUMNAS_EXCEL = [
     "termino_busqueda",
@@ -21,6 +22,12 @@ def exportar_resultados(lista_resultados):
     dataframe = dataframe[COLUMNAS_EXCEL]
 
     os.makedirs(Config.ruta_carpeta_output(), exist_ok=True)
-    dataframe.to_excel(Config.ruta_excel(), index=False)
+
+    try:
+        dataframe.to_excel(Config.ruta_excel(), index=False)
+    except Exception as error:
+        Logger.error(f"No se pudo guardar el Excel: {error}")
+        Impresor.aviso("No se pudo guardar el archivo Excel (¿está abierto en otro programa?)")
+        return
 
     Impresor.mostrar(f"Se guardaron {len(lista_resultados)} resultados en {Config.NOMBRE_ARCHIVO_EXCEL}")
