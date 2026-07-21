@@ -1,0 +1,19 @@
+# Documentación y notas de apoyo personal (no forman parte de la entrega)
+.local/
+
+# Entornos virtuales
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Variables de entorno
+.env
+
+# Salidas generadas
+output/
+logs/
+*.xlsx
