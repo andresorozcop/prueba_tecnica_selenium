@@ -10,20 +10,21 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
 from services.extractor_resultados import extraer_cinco_resultados
+from services.exportador_excel import exportar_resultados
 
 NOMBRE_ARCHIVO = "productos_busqueda.json"
 URL_MERCADOLIBRE = "https://www.mercadolibre.com.co"
 NOMBRE_CARPETA_PERFIL = "chrome_profile"
 
 
-def obtener_termino_de_prueba():
+def obtener_todos_los_terminos():
     raiz_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ruta_json = os.path.join(raiz_proyecto, NOMBRE_ARCHIVO)
 
     with open(ruta_json, "r", encoding="utf-8") as archivo:
         terminos = json.load(archivo)
 
-    return terminos[0].strip()
+    return terminos
 
 
 def crear_driver():
@@ -56,18 +57,24 @@ def buscar_en_mercadolibre(driver, termino):
     )
 
 
-def buscar_termino_prueba():
-    termino = obtener_termino_de_prueba()
-    print(f"Probando búsqueda con el término: {termino}")
+def procesar_todas_las_busquedas():
+    terminos = obtener_todos_los_terminos()
 
     driver = crear_driver()
 
-    buscar_en_mercadolibre(driver, termino)
-    print("Página de resultados cargada correctamente.")
+    resultados_totales = []
+    for termino in terminos:
+        termino = termino.strip()
+        print(f"Buscando término: {termino}")
 
-    resultados = extraer_cinco_resultados(driver)
-    for i, resultado in enumerate(resultados, 1):
-        print(f"{i}. {resultado}")
+        buscar_en_mercadolibre(driver, termino)
+
+        resultados = extraer_cinco_resultados(driver)
+        for resultado in resultados:
+            resultado["termino_busqueda"] = termino
+        resultados_totales.extend(resultados)
+
+    exportar_resultados(resultados_totales)
 
     input("Presiona Enter para cerrar Chrome...")
     driver.quit()
