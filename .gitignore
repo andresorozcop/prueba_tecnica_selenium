@@ -1,4 +1,4 @@
-# Documentación y notas de apoyo personal (no forman parte de la entrega)
+# Documentación y notas locales
 .local/
 
 # Entornos virtuales
@@ -19,3 +19,6 @@ logs/
 
 # Perfil persistente de Chrome (cookies/sesión reales, no se versiona)
 chrome_profile/
+
+# Se genera cada vez que se corre el script, con los términos que escriba el usuario
+productos_busqueda.json
