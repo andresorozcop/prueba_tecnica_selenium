@@ -1,11 +1,13 @@
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
-CANTIDAD_RESULTADOS = 5
+from utils.config import Config
+from utils.logger import Logger
+from utils.impresor import Impresor
 
 
 def extraer_cinco_resultados(driver):
-    tarjetas = driver.find_elements(By.CLASS_NAME, "poly-card")[:CANTIDAD_RESULTADOS]
+    tarjetas = driver.find_elements(By.CLASS_NAME, "poly-card")[:Config.CANTIDAD_RESULTADOS]
 
     resultados = []
     for tarjeta in tarjetas:
@@ -29,7 +31,8 @@ def extraer_un_resultado(tarjeta):
         resultado["producto"] = elemento_titulo.text
         resultado["link"] = elemento_titulo.get_attribute("href")
     except NoSuchElementException:
-        print("[AVISO] Producto/Link no encontrado en un resultado")
+        Logger.advertencia("Producto/Link no encontrado en un resultado")
+        Impresor.aviso("Producto/Link no encontrado en un resultado")
 
     try:
         # si el producto tiene descuento, el precio actual vive dentro de poly-price__current
@@ -40,19 +43,22 @@ def extraer_un_resultado(tarjeta):
         # el símbolo $ y el número quedan en spans separados, .text los junta con salto de línea
         resultado["precio"] = elemento_precio.text.replace("\n", " ")
     except NoSuchElementException:
-        print(f"[AVISO] Precio no encontrado para: {resultado['producto']}")
+        Logger.advertencia(f"Precio no encontrado para: {resultado['producto']}")
+        Impresor.aviso(f"Precio no encontrado para: {resultado['producto']}")
 
     try:
         resultado["vendedor"] = tarjeta.find_element(By.CSS_SELECTOR, "span.poly-component__seller").text
     except NoSuchElementException:
-        print(f"[AVISO] Vendedor no encontrado para: {resultado['producto']}")
+        Logger.advertencia(f"Vendedor no encontrado para: {resultado['producto']}")
+        Impresor.aviso(f"Vendedor no encontrado para: {resultado['producto']}")
 
     try:
         resultado["calificacion"] = tarjeta.find_element(
             By.CSS_SELECTOR, "span.poly-component__review-compacted .polylabel-label"
         ).text
     except NoSuchElementException:
-        print(f"[AVISO] Calificación no encontrada para: {resultado['producto']}")
+        Logger.advertencia(f"Calificación no encontrada para: {resultado['producto']}")
+        Impresor.aviso(f"Calificación no encontrada para: {resultado['producto']}")
 
     # envío gratis no es un campo faltante, es Si/No según si existe el bloque
     try:

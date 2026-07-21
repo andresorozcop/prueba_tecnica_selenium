@@ -1,5 +1,4 @@
 import json
-import os
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -11,15 +10,12 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 from services.extractor_resultados import extraer_cinco_resultados
 from services.exportador_excel import exportar_resultados
-
-NOMBRE_ARCHIVO = "productos_busqueda.json"
-URL_MERCADOLIBRE = "https://www.mercadolibre.com.co"
-NOMBRE_CARPETA_PERFIL = "chrome_profile"
+from utils.config import Config
+from utils.impresor import Impresor
 
 
 def obtener_todos_los_terminos():
-    raiz_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    ruta_json = os.path.join(raiz_proyecto, NOMBRE_ARCHIVO)
+    ruta_json = Config.ruta_json_busquedas()
 
     with open(ruta_json, "r", encoding="utf-8") as archivo:
         terminos = json.load(archivo)
@@ -28,8 +24,7 @@ def obtener_todos_los_terminos():
 
 
 def crear_driver():
-    raiz_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    ruta_perfil = os.path.join(raiz_proyecto, NOMBRE_CARPETA_PERFIL)
+    ruta_perfil = Config.ruta_carpeta_perfil()
 
     # perfil persistente: así Chrome mantiene cookies/sesión entre corridas
     # en vez de verse como un usuario nuevo cada vez (evita bloqueos de ML)
@@ -41,9 +36,9 @@ def crear_driver():
 
 
 def buscar_en_mercadolibre(driver, termino):
-    driver.get(URL_MERCADOLIBRE)
+    driver.get(Config.URL_MERCADOLIBRE)
 
-    campo_busqueda = WebDriverWait(driver, 10).until(
+    campo_busqueda = WebDriverWait(driver, Config.TIMEOUT_CORTO).until(
         EC.presence_of_element_located((By.NAME, "as_word"))
     )
     campo_busqueda.send_keys(termino)
@@ -52,7 +47,7 @@ def buscar_en_mercadolibre(driver, termino):
     # respaldo si aun así aparece el recaptcha: no seguimos hasta que el usuario confirme
     input("Si aparece un recaptcha, resuélvelo y presiona Enter para continuar...")
 
-    WebDriverWait(driver, 30).until(
+    WebDriverWait(driver, Config.TIMEOUT_LARGO).until(
         EC.presence_of_element_located((By.CLASS_NAME, "ui-search-results"))
     )
 
@@ -63,9 +58,10 @@ def procesar_todas_las_busquedas():
     driver = crear_driver()
 
     resultados_totales = []
-    for termino in terminos:
+    total_terminos = len(terminos)
+    for indice, termino in enumerate(terminos, start=1):
         termino = termino.strip()
-        print(f"Buscando término: {termino}")
+        Impresor.progreso(indice, total_terminos, f'buscando "{termino}"')
 
         buscar_en_mercadolibre(driver, termino)
 

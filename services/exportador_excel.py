@@ -2,8 +2,8 @@ import os
 
 import pandas as pd
 
-NOMBRE_ARCHIVO_EXCEL = "resultados_busqueda.xlsx"
-NOMBRE_CARPETA_OUTPUT = "output"
+from utils.config import Config
+from utils.impresor import Impresor
 
 COLUMNAS_EXCEL = [
     "termino_busqueda",
@@ -20,11 +20,7 @@ def exportar_resultados(lista_resultados):
     dataframe = pd.DataFrame(lista_resultados)
     dataframe = dataframe[COLUMNAS_EXCEL]
 
-    raiz_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    carpeta_output = os.path.join(raiz_proyecto, NOMBRE_CARPETA_OUTPUT)
-    os.makedirs(carpeta_output, exist_ok=True)
+    os.makedirs(Config.ruta_carpeta_output(), exist_ok=True)
+    dataframe.to_excel(Config.ruta_excel(), index=False)
 
-    ruta_excel = os.path.join(carpeta_output, NOMBRE_ARCHIVO_EXCEL)
-    dataframe.to_excel(ruta_excel, index=False)
-
-    print(f"Se guardaron {len(lista_resultados)} resultados en {NOMBRE_ARCHIVO_EXCEL}")
+    Impresor.mostrar(f"Se guardaron {len(lista_resultados)} resultados en {Config.NOMBRE_ARCHIVO_EXCEL}")
