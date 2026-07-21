@@ -9,8 +9,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
+from services.extractor_resultados import extraer_cinco_resultados
+
 NOMBRE_ARCHIVO = "productos_busqueda.json"
 URL_MERCADOLIBRE = "https://www.mercadolibre.com.co"
+NOMBRE_CARPETA_PERFIL = "chrome_profile"
 
 
 def obtener_termino_de_prueba():
@@ -24,8 +27,16 @@ def obtener_termino_de_prueba():
 
 
 def crear_driver():
+    raiz_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ruta_perfil = os.path.join(raiz_proyecto, NOMBRE_CARPETA_PERFIL)
+
+    # perfil persistente: así Chrome mantiene cookies/sesión entre corridas
+    # en vez de verse como un usuario nuevo cada vez (evita bloqueos de ML)
+    opciones = webdriver.ChromeOptions()
+    opciones.add_argument(f"--user-data-dir={ruta_perfil}")
+
     servicio = Service(ChromeDriverManager().install())
-    return webdriver.Chrome(service=servicio)
+    return webdriver.Chrome(service=servicio, options=opciones)
 
 
 def buscar_en_mercadolibre(driver, termino):
@@ -37,8 +48,10 @@ def buscar_en_mercadolibre(driver, termino):
     campo_busqueda.send_keys(termino)
     campo_busqueda.send_keys(Keys.ENTER)
 
-    # wait explícito en vez de sleep fijo: esperamos a que aparezca el contenedor de resultados
-    WebDriverWait(driver, 10).until(
+    # respaldo si aun así aparece el recaptcha: no seguimos hasta que el usuario confirme
+    input("Si aparece un recaptcha, resuélvelo y presiona Enter para continuar...")
+
+    WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.CLASS_NAME, "ui-search-results"))
     )
 
@@ -51,6 +64,10 @@ def buscar_termino_prueba():
 
     buscar_en_mercadolibre(driver, termino)
     print("Página de resultados cargada correctamente.")
+
+    resultados = extraer_cinco_resultados(driver)
+    for i, resultado in enumerate(resultados, 1):
+        print(f"{i}. {resultado}")
 
     input("Presiona Enter para cerrar Chrome...")
     driver.quit()
